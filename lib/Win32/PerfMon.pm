@@ -35,7 +35,7 @@ our @ISA = qw(Exporter DynaLoader);
 
 #our @EXPORT = qw();
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 bootstrap Win32::PerfMon $VERSION;
 
@@ -59,6 +59,7 @@ sub new
 	$self->{'COUNTERS'} = undef;
 	$self->{'ERRORMSG'} = undef;
 	$self->{'MACHINENAME'} = undef;
+	$self->{'CALC_RATE'} = 0;
 	
 	bless($self, $class);
 	
@@ -108,6 +109,11 @@ sub AddCounter
 	}
 	
 	my ($self, $ObjectName, $CounterName, $InstanceName) = @_;
+	
+	if($CounterName =~ /\/sec/g)
+	{
+		$self->{'CALC_RATE'} = 1;
+	}
 				
 	# go and create the counter ....
         my $NewCounter = add_counter($ObjectName, $CounterName, $InstanceName, $self->{'HQUERY'}, $self->{'ERRORMSG'});
@@ -138,6 +144,14 @@ sub CollectData
 	# Populate the counters associated witht he query object
 	my $res = collect_data($self->{'HQUERY'}, $self->{'ERRORMSG'});
 	
+	if($self->{'CALC_RATE'} == 1 && ($res != -1))
+	{	
+		sleep(1);
+
+		$res = collect_data($self->{'HQUERY'}, $self->{'ERRORMSG'});
+	}
+	
+	
 	if($res == -1)
 	{
 	    return(0);
@@ -146,6 +160,12 @@ sub CollectData
 	{
 	    return(1);
 	}
+	
+	
+	
+	
+	
+
 }
 
 ##########################################
